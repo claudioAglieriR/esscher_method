@@ -98,13 +98,13 @@ class Model():
 class Merton(Model):
 
     def __init__(self, risk_free_rate: float = 0, delta: float = 1 / 252, parameters: Optional[Dict[str, float]] = None,
-                 lower_bound: float = 1e-8, upper_bound: float = 4.0,
-                 ):
-        super().__init__(risk_free_rate=risk_free_rate, delta=delta, parameters=parameters, lower_bound=lower_bound, upper_bound=upper_bound
+                 lower_bound_intermediate: float = 1e-8, upper_bound_intermediate: float = 4.0,
+                 direct_esscher_transform: bool = True):
+        super().__init__(risk_free_rate=risk_free_rate, delta=delta, parameters=parameters,
                          )
 
         if parameters is None:
-            parameters = {"sigma": 1e-2}
+            parameters = {"mu":1,"sigma": 1e-2}
 
         # physical parameters dictionary
         self.parameters = parameters
@@ -112,8 +112,20 @@ class Merton(Model):
         # risk-neutral parameters dictionary
         self.risk_neutral_parameters = self.risk_neutral_parameters_update(p_star=0)
 
+        self.lower_bound_intermediate = lower_bound_intermediate
+        self.upper_bound_intermediate = upper_bound_intermediate
 
+        self.bounds_intermediate =  [(-self.parameters['mu']*1e2, self.parameters['mu']*1e2),(1e-10, self.parameters['sigma']*1e2)]
 
+        self.bounds_initialization = self.bounds_intermediate
+
+    @property
+    def mu(self):
+        return self.parameters["mu"]
+
+    @mu.setter
+    def mu(self, value: float):
+        self.parameters["mu"] = value
     @property
     def sigma(self):
         return self.parameters["sigma"]
@@ -122,42 +134,45 @@ class Merton(Model):
     def sigma(self, value: float):
         self.parameters["sigma"] = value
 
+
+    def first_central_moment(self) -> float:
+        return self.mu * self.delta
     # second central moment, see chapter 2.5.1
     def second_central_moment(self) -> float:
-        return self.sigma ** 2 * self.delta
+        return (self.sigma ** 2) * self.delta
 
     def theoretical_cumulants(self) -> Dict:
-        return {
-            'variance': self.second_central_moment(),
+        return { 'mean':self.first_central_moment(),
+            'variance': self.second_central_moment()
         }
 
     def parameters_update(self, parameters: np.ndarray) -> None:
-        self.sigma = parameters[0]
+        self.mu=parameters[0]
+        self.sigma = parameters[1]
 
     def cumulant_generating_function(self, cgf_input: float) -> float:
-        return 0.5 * (self.sigma ** 2) * (cgf_input ** 2) * self.delta
+        return ((self.mu)*cgf_input + (0.5 * (self.sigma ** 2) * (cgf_input ** 2))) * self.delta
 
     def risk_neutral_parameters_update(self, p_star: float) -> Dict:
-        return {"sigma": self.sigma}
+        return {"mu": self.mu,"sigma": self.sigma}
 
     def original_chf(self, chf_input: complex, t: float) -> complex:
-        return np.exp(-0.5 * (self.sigma ** 2) * (chf_input ** 2) * t)
+        return np.exp((1.j*self.mu*t*chf_input) -(0.5 * (self.sigma ** 2) * (chf_input ** 2) * t))
 
     # characteristic function of the bilateral gamma process
     def chf(self, chf_input: complex, t: float, risk_neutral: bool) -> complex:
         if risk_neutral:
-            p_star = -0.5
+            p_star = -(self.mu+0.5*(self.sigma**2))/(self.sigma**2)
+
             return (self.original_chf(chf_input=chf_input - 1.j * p_star, t=t)) / (
                 self.original_chf(chf_input=-1.j * p_star, t=t))
         else:
             return self.original_chf(chf_input=chf_input, t=t)
 
 
-    def cdf(self, cdf_input: float, t: float, limit: int = int(1e9), upper_bound: float = 1e2,
-                 singularity_tolerance: float = 1e-14):
+    def classic_cdf(self, distance_to_default:float, t:float):
         std= self.sigma*np.sqrt(t)
-        return norm.cdf(x=cdf_input, scale=std)
-
+        return norm.cdf(x=-distance_to_default, scale=std, loc=self.mu)
 class BilateralGammaMotion(Model):
     def __init__(self, risk_free_rate: float = 0, delta: float = 1 / 252, parameters: Optional[Dict[str, float]] = None,
                  lower_bound: float = 1e-2, upper_bound: float = 1e3,

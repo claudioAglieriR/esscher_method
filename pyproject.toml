@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "esscher-method"
+version = "0.1.0"
+description = "Esscher-based calibration and default probability computation for structural Levy models."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Your Name" }]
+keywords = ["credit-risk", "levy", "esscher", "structural-model", "variance-gamma", "bilateral-gamma"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Operating System :: OS Independent",
+  "Topic :: Scientific/Engineering :: Mathematics",
+  "Topic :: Office/Business :: Financial",
+]
+
+dependencies = [
+  "numpy>=1.23",
+  "pandas>=1.5",
+  "scipy>=1.10",
+  "mpmath>=1.3",
+  "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+notebook = [
+  "jupyter>=1.0",
+  "ipykernel>=6.20",
+  "matplotlib>=3.7",
+]
+
+test = [
+  "pytest>=7.4",
+  "pytest-cov>=4.1",
+]
+
+dev = [
+  "black>=24.0",
+  "isort>=5.12",
+  "ruff>=0.6",
+  "mypy>=1.7",
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["esscher_method*", "examples*"]
+exclude = ["venv*", "tests*"]
+
+[tool.setuptools.package-data]
+examples = ["data/**/*.xlsx", "data/**/*.csv", "data/**/*.json", "data/**/*.txt"]
+
+
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+extend-select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]  
+
+[tool.mypy]
+python_version = "3.10"
+ignore_missing_imports = true
+warn_unused_configs = true
+warn_return_any = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-ra"

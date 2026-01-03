@@ -1,0 +1,30 @@
+# Virtual env
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
+
+# Test/Tool caches
+.pytest_cache/
+
+# IDE
+.idea/
+
+# Data files (CSV / Excel)
+*.xlsx
+*.xls
+*.xlsm
+*.xlsb
+*.ods
+
+# log files
+*.log
+
+# local or generated folders
+examples
+esscher_method.egg-info
+docs
+out

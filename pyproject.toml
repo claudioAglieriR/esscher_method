@@ -9,7 +9,7 @@ description = "Esscher-based calibration and default probability computation for
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Your Name" }]
+authors = [{ name = "Name" }]
 keywords = ["credit-risk", "levy", "esscher", "structural-model", "variance-gamma", "bilateral-gamma"]
 classifiers = [
   "Programming Language :: Python :: 3",

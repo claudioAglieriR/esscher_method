@@ -41,7 +41,7 @@ A minimal, self-contained Python package:
 **Windows (Command Prompt)**
 ```bash
 py -m venv venv
-venv\Scripts\activate.bat
+venv\Scripts\activate
 ```
 
 

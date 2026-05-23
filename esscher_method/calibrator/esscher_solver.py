@@ -27,6 +27,11 @@ class EsscherSolverConfig:
     lsq_max_nfev: int = 5000
     nan_penalty: float = 1e6
 
+    # Tolerance on |K(p+1) - K(p) - r*delta| when accepting the bounded least-squares
+    # fallback as a true root. If exceeded, the solver raises rather than returning
+    # a non-root silently.
+    residual_tol: float = 1e-6
+
 
 class EsscherSolver:
     """
@@ -199,4 +204,14 @@ class EsscherSolver:
         if (not bool(sol.success)) or (not np.isfinite(sol.x[0])):
             raise ValueError(f"Esscher bounded solver failed: {sol.message}")
 
-        return float(sol.x[0])
+        # Bounded least-squares minimizes |residual|; reject the candidate if it is not
+        # a root within residual_tol (the optimizer can converge to a non-zero local minimum).
+        p_candidate = float(sol.x[0])
+        final_residual = float(residual(p_candidate))
+        if (not np.isfinite(final_residual)) or (abs(final_residual) > float(self.config.residual_tol)):
+            raise ValueError(
+                f"Esscher fallback did not converge to a root: "
+                f"residual={final_residual} at p={p_candidate}, tolerance={self.config.residual_tol}."
+            )
+
+        return p_candidate

@@ -140,7 +140,10 @@ def _make_calibrator(
     """
     model = _make_model(model_name, vg_use_skewness=vg_use_skewness)
 
-    tolerance = 1e-5 if model_name == "Merton" else 1e-3
+    # Per-model relative convergence tolerance: tighter for Merton and BG (uniformly large
+    # or uniformly small parameter scales settle slowly under a loose relative criterion);
+    # looser for VG (mixed-scale dynamics damp quickly even at coarser precision).
+    tolerance = 1e-3 if model_name == "VarianceGamma" else 1e-5
 
     data = _build_calibration_data(market_df=market_df, debt_df=debt_df, ticker=ticker)
 

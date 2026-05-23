@@ -8,8 +8,11 @@ propagating a local minimum of |residual|.
 """
 from __future__ import annotations
 
+import numpy as np
 import pytest
 
+from esscher_method.calibrator.calibrator import Calibrator
+from esscher_method.calibrator.data_calibration import CalibrationConfig, CalibrationData
 from esscher_method.calibrator.esscher_solver import EsscherSolver, EsscherSolverConfig
 from esscher_method.model.model import BilateralGamma
 
@@ -82,3 +85,34 @@ def test_solver_residual_tol_is_configurable():
     # With tolerance 1.0, the residual |r*delta| ~ 2e-4 is well within tolerance, so accepted.
     p_star = solver_loose.solve()
     assert isinstance(p_star, float)
+
+
+def test_calibration_config_propagates_esscher_solver_config():
+    """A custom EsscherSolverConfig passed via CalibrationConfig is used by Calibrator's solver."""
+    custom = EsscherSolverConfig(grid_points=7, residual_tol=1.0)
+    equity = np.linspace(100.0, 110.0, 252)
+    data = CalibrationData(equity_values=equity, debt=50.0, maturity=1.0)
+    config = CalibrationConfig(
+        use_parallel=False,
+        verbose=0,
+        esscher_solver_config=custom,
+    )
+    model = BilateralGamma(delta=DELTA)
+    cal = Calibrator(model=model, data=data, config=config)
+
+    assert cal.esscher_solver.config is custom
+    assert cal.esscher_solver.config.grid_points == 7
+    assert cal.esscher_solver.config.residual_tol == 1.0
+
+
+def test_calibration_config_default_esscher_solver_config_is_none():
+    """The CalibrationConfig default leaves the field None; the solver falls back to its own default."""
+    equity = np.linspace(100.0, 110.0, 252)
+    data = CalibrationData(equity_values=equity, debt=50.0, maturity=1.0)
+    config = CalibrationConfig(use_parallel=False, verbose=0)
+
+    assert config.esscher_solver_config is None
+
+    cal = Calibrator(model=BilateralGamma(delta=DELTA), data=data, config=config)
+    # EsscherSolver falls back to a default EsscherSolverConfig() when given None.
+    assert isinstance(cal.esscher_solver.config, EsscherSolverConfig)

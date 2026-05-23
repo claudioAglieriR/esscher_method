@@ -7,6 +7,8 @@ from typing import Callable, Dict, Optional, Sequence, Tuple, Union
 import numpy as np
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
+from .esscher_solver import EsscherSolverConfig
+
 Number = Union[int, float, np.number]
 
 
@@ -98,3 +100,7 @@ class CalibrationConfig:
     asset_upper_bound: float = float(np.iinfo(np.int64).max)
 
     pricer_config: Optional[object] = None
+
+    # Numerical settings for the Esscher p_star solver. If None, the solver uses
+    # the default EsscherSolverConfig (grid, brentq tolerances, residual tolerance).
+    esscher_solver_config: Optional[EsscherSolverConfig] = None

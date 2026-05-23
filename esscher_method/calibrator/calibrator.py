@@ -76,6 +76,7 @@ class Calibrator:
             model=self.model,
             risk_free_rate=float(self.data.risk_free_rate),
             delta=float(self.model.delta),
+            config=self.config.esscher_solver_config,
         )
         self.asset_inference = AssetInferenceEngine(model=self.model, data=self.data, config=self.config, logger=self.logger)
 
@@ -330,16 +331,25 @@ class Calibrator:
 
     def _physical_parameters_converged(self, *, tolerance: float) -> bool:
         """
-        Check convergence by comparing the last two physical parameter sets.
+        Relative-tolerance convergence test on the last two physical parameter sets.
+
+        Returns True iff |current - previous| / max(|previous|, 1e-8) <= tolerance
+        for every parameter. Relative form avoids the scale bias of an absolute
+        criterion, where large-magnitude parameters (e.g. BG lambdas ~ 100) dominate
+        the verdict over small-magnitude ones (e.g. Merton mu ~ 0.03).
         """
         if len(self.physical_history) < 2:
             return False
 
         previous_params = self.physical_history[-2]
         current_params = self.physical_history[-1]
+        tol = float(tolerance)
 
         for name in current_params.keys():
-            if abs(float(current_params[name]) - float(previous_params[name])) > float(tolerance):
+            prev_val = float(previous_params[name])
+            curr_val = float(current_params[name])
+            denom = max(abs(prev_val), 1e-8)
+            if abs(curr_val - prev_val) / denom > tol:
                 return False
         return True
 

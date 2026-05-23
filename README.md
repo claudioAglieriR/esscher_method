@@ -117,4 +117,32 @@ Parallel asset inference is enabled by default (`use_parallel=True`).
 
 ---
 
+## Reproducibility
+
+The package reproduces the published paper out of the box. A fresh clone
+of the repository, followed by the demo notebook with no modifications,
+yields exactly the numbers reported in Tables 1, 3 and 4 of the paper.
+This is the default behaviour and is preserved by the regression test
+suite.
+
+The commit tagged `paper-v1` is the formal audit anchor for this
+guarantee, useful if you want to verify reproducibility against a
+specific point in the repository's history:
+
+```bash
+git checkout paper-v1
+```
+
+To return to the latest development state:
+
+```bash
+git checkout master
+```
+
+Where the package ships alternative methodologies (for example, a
+different moment-matching identification for the Variance Gamma model),
+those are exposed as opt-in configuration flags, disabled by default.
+Activating such a flag explicitly produces values that may differ from
+the paper, and is the user's deliberate choice.
+
 

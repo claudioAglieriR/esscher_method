@@ -10,6 +10,7 @@ import pytest
 from esscher_method.calibrator.calibrator import Calibrator
 from esscher_method.calibrator.data_calibration import CalibrationData, CalibrationConfig
 from esscher_method.model.model import VarianceGamma, BilateralGamma, Merton
+from esscher_method.model.policies import VarianceGammaPolicy
 
 
 # --- Dataset locations (repo-root/data/*)
@@ -33,10 +34,22 @@ BASELINES = [
         "params": {"mu": 0.026536, "sigma": 0.303165},
     },
     {
+        # VG in paper-compatibility mode (4th cumulant identification).
+        # Reproduces Table 1 / Table 3 VG of the paper exactly.
         "ticker": "DG FP",
         "model": "VarianceGamma",
+        "vg_use_skewness": False,
         "pd_pct": 1.058059,
         "params": {"sigma": 0.291066, "theta": -0.189949, "nu": 0.009015},
+    },
+    {
+        # VG with skewness-based identification (opt-in via VarianceGammaPolicy.use_skewness=True).
+        # Produces values that differ from the paper (the paper uses the 4th cumulant).
+        "ticker": "DG FP",
+        "model": "VarianceGamma",
+        "vg_use_skewness": True,
+        "pd_pct": 1.190421,
+        "params": {"sigma": 0.289474, "theta": -0.189961, "nu": 0.034035},
     },
     {
         "ticker": "FGR FP",
@@ -77,9 +90,14 @@ def datasets():
     return market_df, debt_df
 
 
-def _make_model(model_name: str):
+def _make_model(model_name: str, *, vg_use_skewness: bool = False):
     if model_name == "VarianceGamma":
-        return VarianceGamma(delta=DELTA)
+        # vg_use_skewness toggles the identification strategy (3rd vs 4th cumulant).
+        # See VarianceGammaPolicy.use_skewness for details.
+        return VarianceGamma(
+            delta=DELTA,
+            policy=VarianceGammaPolicy(use_skewness=bool(vg_use_skewness)),
+        )
     if model_name == "BilateralGamma":
         return BilateralGamma(delta=DELTA)
     if model_name == "Merton":
@@ -109,11 +127,18 @@ def _build_calibration_data(*, market_df: pd.DataFrame, debt_df: pd.DataFrame, t
     )
 
 
-def _make_calibrator(*, market_df: pd.DataFrame, debt_df: pd.DataFrame, ticker: str, model_name: str) -> Calibrator:
+def _make_calibrator(
+    *,
+    market_df: pd.DataFrame,
+    debt_df: pd.DataFrame,
+    ticker: str,
+    model_name: str,
+    vg_use_skewness: bool = False,
+) -> Calibrator:
     """
     Create a calibrator with parallelization enabled (thread executor for portability).
     """
-    model = _make_model(model_name)
+    model = _make_model(model_name, vg_use_skewness=vg_use_skewness)
 
     tolerance = 1e-5 if model_name == "Merton" else 1e-3
 
@@ -159,6 +184,7 @@ def test_calibration_regression(case, datasets):
         debt_df=debt_df,
         ticker=case["ticker"],
         model_name=case["model"],
+        vg_use_skewness=bool(case.get("vg_use_skewness", False)),
     )
 
     cal.calibration()

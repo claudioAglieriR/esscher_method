@@ -91,6 +91,14 @@ class VarianceGammaPolicy:
     upper_bound: float = 1e3
     lambda_min_offset: float = 1.0
 
+    # Moment-matching identification strategy for VG.
+    # False (default): use the 4th cumulant as the third identifying statistic.
+    #                  Reproduces the published paper (Table 1 VG, Tables 3 and 4 VG PD).
+    # True:            use the skewness (3rd cumulant). Statistically more informative
+    #                  for asymmetric VG (lambda_P != lambda_M) but produces values
+    #                  that differ from the paper.
+    use_skewness: bool = False
+
     def bounds(self) -> List[Tuple[float, float]]:
         lb = self.lower_bound
         ub = self.upper_bound

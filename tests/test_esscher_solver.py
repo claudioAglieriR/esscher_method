@@ -2,9 +2,9 @@
 Unit tests for EsscherSolver.
 
 These tests target the solver in isolation, without running the full calibration
-pipeline. The first test directly covers W21: the bounded least-squares fallback
-must reject a candidate that is not a true root of the Esscher equation, instead
-of silently propagating a local minimum of |residual|.
+pipeline. The first test verifies that the bounded least-squares fallback rejects
+a candidate that is not a true root of the Esscher equation, instead of silently
+propagating a local minimum of |residual|.
 """
 from __future__ import annotations
 
@@ -25,10 +25,11 @@ class FlatCGFModel:
       - if r != 0, the equation has NO root and the solver must raise.
       - if r == 0, the equation reduces to 0 = 0 and any p in bounds is a trivial root.
 
-    This is exactly the geometry that exposes W21: the grid bracketing fails
-    (constant residual has no sign change), and the bounded least-squares fallback
-    converges to a local minimum where |residual| = |r*delta|, which is NOT a root
-    when r != 0. The old code returned this candidate silently; the new code rejects it.
+    This geometry forces the failure mode that the post-fallback residual check
+    guards against: the grid bracketing fails (constant residual has no sign change),
+    and the bounded least-squares fallback converges to a local minimum where
+    |residual| = |r*delta|, which is NOT a root when r != 0. Without the residual
+    check, the solver would return this candidate silently.
     """
 
     def esscher_p_star_bounds(self):

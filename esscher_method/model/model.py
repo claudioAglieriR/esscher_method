@@ -708,6 +708,13 @@ class VarianceGamma(BilateralGamma):
         return a, self.lambda_P, a, self.lambda_M
 
     def theoretical_cumulants(self) -> Dict[str, float]:
+        # Identification strategy is controlled by VarianceGammaPolicy.use_skewness.
+        if bool(getattr(self.policy, "use_skewness", False)):
+            return {
+                "mean": self.cumulant(n=1),
+                "variance": self.cumulant(n=2),
+                "skewness": self.cumulant(n=3),
+            }
         return {
             "mean": self.cumulant(n=1),
             "variance": self.cumulant(n=2),

@@ -1,30 +1,74 @@
-# Virtual env
+# Virtual environments
 venv/
 .venv/
+env/
+ENV/
+pyvenv.cfg
 
-# Python cache
+# Python cache and bytecode
 __pycache__/
 **/__pycache__/
 *.py[cod]
+*$py.class
 
-# Test/Tool caches
+# Test / lint / type-check caches
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
 
-# IDE
+# Coverage reports
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Packaging and build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE / editor
 .idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.bak
+*.orig
 
-# Data files (CSV / Excel)
+# OS junk
+.DS_Store
+.AppleDouble
+._*
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Data files (Excel / spreadsheet binaries; typically client data, never tracked)
+# Note: *.csv intentionally NOT ignored - the files in data/ are test inputs.
 *.xlsx
 *.xls
 *.xlsm
 *.xlsb
 *.ods
 
-# log files
-*.log
+# Project-local / generated folders
+examples/
+docs/
+out/
 
-# local or generated folders
-examples
-esscher_method.egg-info
-docs
-out
+# Claude Code context and scratch notes
+CLAUDE.md
+MARKDOWN/

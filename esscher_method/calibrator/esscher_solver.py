@@ -82,7 +82,8 @@ class EsscherSolver:
         ))
 
     def _residual_function(self) -> Callable[[float], float]:
-        # TODO : Discuss the usage of delta in rdt
+        # CGF returns the delta-scaled cumulant t*K_X(p,1); rdt = r*delta absorbs the same
+        # delta factor, so this is equivalent to the per-unit-time Esscher equation K(p+1) - K(p) = r.
         rdt = float(self.risk_free_rate) * float(self.delta)
 
         def residual(p: float) -> float:

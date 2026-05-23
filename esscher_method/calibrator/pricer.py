@@ -18,7 +18,9 @@ Number = Union[int, float, np.number]
 class LewisPricerConfig:
     """Numerical settings for the Lewis Fourier integral."""
     integration_upper_bound: float = float(2**10)
-    quad_limit: int = int(20_000) #TODO : reset to 500
+    # Max subdivisions for scipy adaptive quadrature; 500 covers the oscillations of
+    # the Fourier integrand over the bounded interval [0, integration_upper_bound].
+    quad_limit: int = 500
 
 
 class LewisEuropeanTargetPricer:

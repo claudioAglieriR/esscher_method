@@ -306,6 +306,14 @@ class AssetInferenceEngine:
         return [float(self.daily_asset_inversion(i)) for i in day_indices]
 
     def _infer_threaded(self, *, day_indices: List[int]) -> List[float]:
+        # Thread-safety invariant (pinned by tests/test_thread_safety.py):
+        # model.parameters and model.risk_neutral_parameters are read-only
+        # during this batch. All threads share self.model and must only
+        # read from it; physical and risk-neutral parameter updates
+        # (parameters_update, risk_neutral_parameters_update) must run on
+        # the main thread, between inference batches. The process-pool
+        # path (_infer_process) achieves this via pickle isolation; the
+        # threaded path relies on this read-only contract.
         factory = self.config.thread_executor_factory
         with factory(max_workers=self.config.max_workers) as ex:
             results = list(ex.map(self.daily_asset_inversion, day_indices))

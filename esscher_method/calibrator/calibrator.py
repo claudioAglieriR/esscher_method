@@ -163,7 +163,19 @@ class Calibrator:
 
     def historical_values_init(self) -> None:
         """
-        Initialize calibration by fitting physical parameters on equity log-returns and then updating risk-neutral parameters.
+        Bootstrap the loop by fitting physical parameters on equity log-returns,
+        then push the resulting risk-neutral parameters.
+
+        Initial-guess-only: equity is a non-linear (call-option) transform of
+        the asset process, so equity cumulants are not asset cumulants. This
+        is a deliberate seed: recurrent_estimation() re-fits physical
+        parameters on the inferred asset log-returns from iteration 1 onward,
+        correcting the seed after the first asset-inversion pass. A more
+        principled seed (e.g. delta-method asset moments) would shift the
+        convergence point under finite max_iterations and would break the
+        paper-baseline regression test (see tests/test_initial_guess_invariance.py
+        for empirical seed-invariance at max_iterations >= 30). The
+        equity-cumulants seed preserves the paper default bit-by-bit.
         """
         self._log("STEP 1 - historical_values_init\n\n", min_verbose=1)
 

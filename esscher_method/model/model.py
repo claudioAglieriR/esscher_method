@@ -749,17 +749,29 @@ class VarianceGamma(BilateralGamma):
         }
 
     def parameters_convention_update(self) -> None:
+        """
+        Populate the conventional VG triple (sigma, theta, nu) in self.parameters
+        from the internal (alpha, lambda_P, lambda_M) per paper Eq. 29:
+            sigma = sqrt(2 * alpha / (lambda_P * lambda_M))
+            theta = alpha / lambda_P - alpha / lambda_M
+            nu    = 1 / alpha
+
+        Reporting-only: sigma, theta, nu are derived outputs, not calibrated
+        inputs. They are not in self.parameter_names, not in self.bounds, and
+        not validated by check_bounds. They are also not auto-refreshed:
+        a subsequent parameters_update() will leave them stale until
+        parameters_convention_update() is called again. Use them for display /
+        comparison with literature; use (alpha, lambda_P, lambda_M) for any
+        numerical operation (CGF evaluation, Esscher solve, bounds checks).
+        """
         alpha = self.alpha
         lambda_p = self.lambda_P
         lambda_m = self.lambda_M
         self.parameters["sigma"] = float(np.sqrt((2.0 * alpha) / (lambda_p * lambda_m)))
         self.parameters["theta"] = float(alpha / lambda_p - alpha / lambda_m)
         self.parameters["nu"] = float(1.0 / alpha)
-        
-      
-        
-        
-    
+
+
     def cgf_domain_bounds(self, eps: float = 1.0e-12) -> tuple[float, float]:
         """
         VarianceGamma is initially parameterized with (alpha, lambda_P, lambda_M),

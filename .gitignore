@@ -71,4 +71,5 @@ out/
 
 # Claude Code context and scratch notes
 CLAUDE.md
+.claude/
 MARKDOWN/

@@ -85,7 +85,7 @@ python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 # Skip slow and nightly tests by default to keep the standard `pytest`
-# invocation under ~3 minutes. Run the other layers explicitly:
+# invocation around ~6 minutes. Run the other layers explicitly:
 #   pytest -m slow       extended smoke (~5 minutes)
 #   pytest -m nightly    comprehensive statistical validation (hours)
 addopts = "-ra -m 'not slow and not nightly'"

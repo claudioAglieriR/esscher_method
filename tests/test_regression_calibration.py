@@ -25,11 +25,20 @@ DELTA = 1.0 / 252.0
 MATURITY = 1.0
 
 
-# --- Non-regression baselines (ONLY PD% + parameters)
+# --- Non-regression baselines (ONLY PD% + parameters).
+#
+# r-axis note: the paper experiments are all at r = 0 (Table 1 / 3 / 4
+# reproduced by the r = 0.0 entries below). The r = 0.03 entries extend
+# the pinned numerical domain to verify that the calibration pipeline
+# remains deterministic and reproducible when the Esscher equation
+# K_X(p* + 1) - K_X(p*) = r * delta is driven by a non-zero rate
+# (p* is a monotone increasing function of r, so the drift on every
+# pinpoint below is systematic, not sampling noise).
 BASELINES = [
     {
         "ticker": "CRH LN",
         "model": "Merton",
+        "r": 0.0,
         "pd_pct": 0.003875,
         "params": {"mu": 0.026536, "sigma": 0.303165},
     },
@@ -39,6 +48,7 @@ BASELINES = [
         "ticker": "DG FP",
         "model": "VarianceGamma",
         "vg_use_skewness": False,
+        "r": 0.0,
         "pd_pct": 1.058059,
         "params": {"sigma": 0.291066, "theta": -0.189949, "nu": 0.009015},
     },
@@ -48,18 +58,56 @@ BASELINES = [
         "ticker": "DG FP",
         "model": "VarianceGamma",
         "vg_use_skewness": True,
+        "r": 0.0,
         "pd_pct": 1.190421,
         "params": {"sigma": 0.289474, "theta": -0.189961, "nu": 0.034035},
     },
     {
         "ticker": "FGR FP",
         "model": "BilateralGamma",
+        "r": 0.0,
         "pd_pct": 3.174467,
         "params": {
             "alpha_M": 118.061748,
             "alpha_P": 149.990569,
             "lambda_M": 95.910583,
             "lambda_P": 132.356921,
+        },
+    },
+    # --- r = 0.03 baselines (no paper counterpart; see r-axis note above).
+    {
+        "ticker": "CRH LN",
+        "model": "Merton",
+        "r": 0.03,
+        "pd_pct": 0.004387,
+        "params": {"mu": 0.031286, "sigma": 0.305502},
+    },
+    {
+        "ticker": "DG FP",
+        "model": "VarianceGamma",
+        "vg_use_skewness": False,
+        "r": 0.03,
+        "pd_pct": 1.132946,
+        "params": {"sigma": 0.293516, "theta": -0.185995, "nu": 0.009034},
+    },
+    {
+        "ticker": "DG FP",
+        "model": "VarianceGamma",
+        "vg_use_skewness": True,
+        "r": 0.03,
+        "pd_pct": 1.270661,
+        "params": {"sigma": 0.291936, "theta": -0.186007, "nu": 0.035085},
+    },
+    {
+        "ticker": "FGR FP",
+        "model": "BilateralGamma",
+        "r": 0.03,
+        "pd_pct": 3.405384,
+        "params": {
+            "alpha_M": 117.766310,
+            "alpha_P": 151.598723,
+            "lambda_M": 94.910113,
+            "lambda_P": 131.685300,
         },
     },
 ]
@@ -105,7 +153,13 @@ def _make_model(model_name: str, *, vg_use_skewness: bool = False):
     raise ValueError(f"Unknown model: {model_name}")
 
 
-def _build_calibration_data(*, market_df: pd.DataFrame, debt_df: pd.DataFrame, ticker: str) -> CalibrationData:
+def _build_calibration_data(
+    *,
+    market_df: pd.DataFrame,
+    debt_df: pd.DataFrame,
+    ticker: str,
+    risk_free_rate: float = 0.0,
+) -> CalibrationData:
     """
     Build CalibrationData for a ticker using the shared CSV datasets.
     """
@@ -124,6 +178,7 @@ def _build_calibration_data(*, market_df: pd.DataFrame, debt_df: pd.DataFrame, t
         equity_values=equity_series,
         debt=debt_value,
         maturity=float(MATURITY),
+        risk_free_rate=float(risk_free_rate),
     )
 
 
@@ -134,6 +189,7 @@ def _make_calibrator(
     ticker: str,
     model_name: str,
     vg_use_skewness: bool = False,
+    risk_free_rate: float = 0.0,
 ) -> Calibrator:
     """
     Create a calibrator with parallelization enabled (thread executor for portability).
@@ -145,7 +201,12 @@ def _make_calibrator(
     # looser for VG (mixed-scale dynamics damp quickly even at coarser precision).
     tolerance = 1e-3 if model_name == "VarianceGamma" else 1e-5
 
-    data = _build_calibration_data(market_df=market_df, debt_df=debt_df, ticker=ticker)
+    data = _build_calibration_data(
+        market_df=market_df,
+        debt_df=debt_df,
+        ticker=ticker,
+        risk_free_rate=risk_free_rate,
+    )
 
     config = CalibrationConfig(
         tolerance=float(tolerance),
@@ -178,7 +239,15 @@ def _assert_dict_close_subset(actual: dict, expected: dict, *, rtol: float, atol
         )
 
 
-@pytest.mark.parametrize("case", BASELINES)
+def _baseline_id(case: dict) -> str:
+    parts = [case["ticker"].replace(" ", "_"), case["model"]]
+    if case["model"] == "VarianceGamma":
+        parts.append("sk" if case.get("vg_use_skewness", False) else "k4")
+    parts.append(f"r{case.get('r', 0.0):.2f}")
+    return "-".join(parts)
+
+
+@pytest.mark.parametrize("case", BASELINES, ids=[_baseline_id(c) for c in BASELINES])
 def test_calibration_regression(case, datasets):
     market_df, debt_df = datasets
 
@@ -188,6 +257,7 @@ def test_calibration_regression(case, datasets):
         ticker=case["ticker"],
         model_name=case["model"],
         vg_use_skewness=bool(case.get("vg_use_skewness", False)),
+        risk_free_rate=float(case.get("r", 0.0)),
     )
 
     cal.calibration()

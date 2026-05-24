@@ -153,7 +153,7 @@ The test suite is organised in three layers, identified by pytest markers:
 
 | Layer | Marker | Default `pytest` | Command | Typical runtime |
 |---|---|---|---|---|
-| Unit + smoke + regression baselines | _(none)_ | runs | `pytest` | ~3 minutes |
+| Unit + smoke + regression baselines | _(none)_ | runs | `pytest` | ~6 minutes |
 | Extended smoke (e.g. PD-bootstrap coverage on Merton) | `slow` | skipped | `pytest -m slow` | ~5 minutes |
 | Comprehensive statistical validation | `nightly` | skipped | `pytest -m nightly` | hours |
 

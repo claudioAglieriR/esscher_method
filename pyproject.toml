@@ -84,4 +84,12 @@ testpaths = ["tests"]
 python_files = ["test_*.py", "*_test.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-ra"
+# Skip slow and nightly tests by default to keep the standard `pytest`
+# invocation under ~3 minutes. Run the other layers explicitly:
+#   pytest -m slow       extended smoke (~5 minutes)
+#   pytest -m nightly    comprehensive statistical validation (hours)
+addopts = "-ra -m 'not slow and not nightly'"
+markers = [
+  "slow: marks tests as slow (run explicitly with `pytest -m slow`; typical runtime ~5 minutes).",
+  "nightly: marks tests as comprehensive statistical validation with task-spec sample sizes (run explicitly with `pytest -m nightly`; typical runtime in hours; suitable for release validation and methodological audits).",
+]

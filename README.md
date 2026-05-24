@@ -145,4 +145,31 @@ those are exposed as opt-in configuration flags, disabled by default.
 Activating such a flag explicitly produces values that may differ from
 the paper, and is the user's deliberate choice.
 
+---
+
+## Tests
+
+The test suite is organised in three layers, identified by pytest markers:
+
+| Layer | Marker | Default `pytest` | Command | Typical runtime |
+|---|---|---|---|---|
+| Unit + smoke + regression baselines | _(none)_ | runs | `pytest` | ~3 minutes |
+| Extended smoke (e.g. PD-bootstrap coverage on Merton) | `slow` | skipped | `pytest -m slow` | ~5 minutes |
+| Comprehensive statistical validation | `nightly` | skipped | `pytest -m nightly` | hours |
+
+The first layer is the standard CI check; it pins numerical regression
+baselines (PD% and fitted parameters per ticker x model) at
+`rtol = 1e-4, atol = 1e-4`. The `slow` layer adds extended smoke tests
+that take a few minutes. The `nightly` layer runs comprehensive
+statistical validation (parameter-recovery studies at large sample
+sizes, bootstrap coverage probability across all three Levy models) and
+is intended for release validation; runtime is in the order of hours.
+
+To run two layers together, combine markers with `or`:
+
+```bash
+pytest -m "slow or nightly"      # both opt-in layers
+pytest -m "not nightly"          # default + slow
+```
+
 

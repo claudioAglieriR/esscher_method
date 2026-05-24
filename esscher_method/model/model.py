@@ -319,6 +319,18 @@ class Model(ABC):
 
 
 class Merton(Model):
+    """
+    Brownian-motion model with X(t) ~ N(mu*t, sigma^2*t) (paper Remark 1).
+
+    Conventions:
+      - mu is the per-unit-time mean of log-returns, not the instantaneous
+        asset drift (which would be mu + sigma^2/2).
+      - Risk-neutral parameters under the Esscher measure: mu_RN = r - sigma^2/2,
+        sigma_RN = sigma (paper Eq. 15).
+      - Moment-matching identification: mu = Mean[log-return] / delta,
+        sigma = sqrt(Var[log-return] / delta).
+    """
+
     def __init__(
         self,
         delta: Optional[float] = None,
@@ -596,6 +608,8 @@ class BilateralGamma(Model):
     def exponential_convexity_correction(self) -> float:
         alpha_p, lambda_p, alpha_m, lambda_m = self._bg_params(risk_neutral=False)
 
+        # exp-moment exists only if lambda_P > 1; caller must enforce via bounds
+        # (see BilateralGammaPolicy.lambda_min_offset).
         if lambda_p <= 1.0:
             return float("nan")
 

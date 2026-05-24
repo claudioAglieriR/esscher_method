@@ -53,6 +53,15 @@ class MertonPolicy:
 
 @dataclass(frozen=True)
 class BilateralGammaPolicy:
+    """
+    Default parameters and admissible bounds for the bilateral gamma model.
+
+    lambda_min_offset = 1.0 forces lambda_P > 1, which is required for
+    the exponential moment E[exp(X(1))] = (lambda_P/(lambda_P-1))^alpha_P *
+    (lambda_M/(lambda_M+1))^alpha_M to be finite. Without this offset the
+    Esscher transform is ill-defined.
+    """
+
     default_parameters: Dict[str, float] = field(
         default_factory=lambda: {
             "alpha_P": 10.0 + 1e-1,

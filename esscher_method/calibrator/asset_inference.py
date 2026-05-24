@@ -170,6 +170,13 @@ class DailyAssetInferenceWorker:
         return self._inverter
 
     def __call__(self, day_index: int) -> float:
+        """
+        Invert the equity at day_index into an implied asset value.
+
+        ttm = T + (N - idx - 1) * delta is the time-to-evaluation-date
+        measured backwards from the last observation, so every historical
+        day prices a call expiring at T.
+        """
         idx = int(day_index)
         total_days = int(self.equity_values.size)
 
@@ -249,6 +256,10 @@ class AssetInferenceEngine:
     def daily_asset_inversion(self, day_index: int) -> float:
         """
         Infer the asset value for a single day index.
+
+        ttm = T + (N - idx - 1) * delta is the time-to-evaluation-date
+        measured backwards from the last observation, so every historical
+        day prices a call expiring at T.
         """
         idx = int(day_index)
         total_days = int(self.data.equity_array().size)

@@ -19,9 +19,18 @@ class CalibrationData:
 
     Attributes:
         equity_values: Time series of observed equity values.
-        debt: Debt level used as strike in the structural model.
+        debt: Scalar debt level used as strike in the structural model. The
+            same value is applied to the entire historical window: the
+            calibrator prices each historical day as a call expiring at the
+            common maturity (see asset_inference.daily_asset_inversion for the
+            ttm retro-extrapolation formula), so the implicit assumption is a
+            static capital structure across the window.
         maturity: Horizon in years used for pricing and default probability.
-        risk_free_rate: Continuously-compounded risk-free rate.
+        risk_free_rate: Per-unit-time continuously compounded risk-free rate
+            used in the Esscher equation K_X(p+1) - K_X(p) = r * delta and as
+            discount in the Lewis European call pricer. Default 0.0 matches
+            the paper experiments (all published PDs are computed at r = 0);
+            override by passing an explicit value to the constructor.
     """
 
     equity_values: Sequence[Number]

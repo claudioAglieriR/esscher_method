@@ -17,6 +17,11 @@ from .pricer import LewisEuropeanTargetPricer, LewisPricerConfig
 from .asset_inference import AssetInferenceEngine
 
 
+# Minimum sample size for calibration: one trading year. With non-default delta,
+# scale to keep "one year" the operational floor, never below 252 observations.
+MIN_OBSERVATIONS_PER_YEAR = 252
+
+
 class Calibrator:
     """
     Iterative calibration for structural Levy models using an Esscher transform.
@@ -40,8 +45,17 @@ class Calibrator:
         self.config: CalibrationConfig = config or CalibrationConfig()
 
         equity_values = self.data.equity_array()
-        if equity_values.size < 252:
-            raise ValueError("equity_values must contain at least 252 observations.") #at least 1 year for calibration
+        # Scale the minimum by the user-provided delta so non-default time grids
+        # still require at least one operational year of observations.
+        min_obs = max(
+            MIN_OBSERVATIONS_PER_YEAR,
+            int(round(1.0 / float(self.model.delta))),
+        )
+        if equity_values.size < min_obs:
+            raise ValueError(
+                f"equity_values must contain at least {min_obs} observations "
+                f"(at least 1 year of data at delta={float(self.model.delta):.6g})."
+            )
         if float(self.data.debt) <= 0.0:
             raise ValueError("debt must be positive.")
         if float(self.data.maturity) <= 0.0:

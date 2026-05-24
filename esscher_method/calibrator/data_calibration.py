@@ -8,6 +8,7 @@ import numpy as np
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from .esscher_solver import EsscherSolverConfig
+from .martingale_measure import MartingaleMeasure
 
 Number = Union[int, float, np.number]
 
@@ -112,4 +113,14 @@ class CalibrationConfig:
 
     # Numerical settings for the Esscher p_star solver. If None, the solver uses
     # the default EsscherSolverConfig (grid, brentq tolerances, residual tolerance).
+    # Backward-compat: when martingale_measure is None (default) the Calibrator
+    # builds an EsscherMeasure parameterised by this config; when martingale_measure
+    # is explicitly set, this field is ignored (the chosen measure is authoritative).
     esscher_solver_config: Optional[EsscherSolverConfig] = None
+
+    # Equivalent martingale measure (EMM) used to translate physical to risk-neutral
+    # parameters. Default None means "use EsscherMeasure with esscher_solver_config",
+    # preserving the paper baseline bit-by-bit. Pass an explicit MartingaleMeasure
+    # subclass (EsscherMeasure with custom config, MeanCorrectingMeasure, or a
+    # user-defined strategy) to override.
+    martingale_measure: Optional[MartingaleMeasure] = None

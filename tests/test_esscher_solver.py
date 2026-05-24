@@ -14,6 +14,7 @@ import pytest
 from esscher_method.calibrator.calibrator import Calibrator
 from esscher_method.calibrator.data_calibration import CalibrationConfig, CalibrationData
 from esscher_method.calibrator.esscher_solver import EsscherSolver, EsscherSolverConfig
+from esscher_method.calibrator.martingale_measure import EsscherMeasure
 from esscher_method.model.model import BilateralGamma
 
 
@@ -88,7 +89,12 @@ def test_solver_residual_tol_is_configurable():
 
 
 def test_calibration_config_propagates_esscher_solver_config():
-    """A custom EsscherSolverConfig passed via CalibrationConfig is used by Calibrator's solver."""
+    """
+    A custom EsscherSolverConfig passed via CalibrationConfig.esscher_solver_config
+    must reach the EsscherSolver. After the MartingaleMeasure refactor,
+    the propagation goes through the EsscherMeasure wrapper exposed on
+    Calibrator.martingale_measure.config.
+    """
     custom = EsscherSolverConfig(grid_points=7, residual_tol=1.0)
     equity = np.linspace(100.0, 110.0, 252)
     data = CalibrationData(equity_values=equity, debt=50.0, maturity=1.0)
@@ -100,19 +106,28 @@ def test_calibration_config_propagates_esscher_solver_config():
     model = BilateralGamma(delta=DELTA)
     cal = Calibrator(model=model, data=data, config=config)
 
-    assert cal.esscher_solver.config is custom
-    assert cal.esscher_solver.config.grid_points == 7
-    assert cal.esscher_solver.config.residual_tol == 1.0
+    assert isinstance(cal.martingale_measure, EsscherMeasure)
+    assert cal.martingale_measure.config is custom
+    assert cal.martingale_measure.config.grid_points == 7
+    assert cal.martingale_measure.config.residual_tol == 1.0
 
 
 def test_calibration_config_default_esscher_solver_config_is_none():
-    """The CalibrationConfig default leaves the field None; the solver falls back to its own default."""
+    """
+    The CalibrationConfig defaults leave both esscher_solver_config and
+    martingale_measure as None; the Calibrator builds an EsscherMeasure with
+    config=None, and the inner EsscherSolver falls back to its own default
+    EsscherSolverConfig at solve() time.
+    """
     equity = np.linspace(100.0, 110.0, 252)
     data = CalibrationData(equity_values=equity, debt=50.0, maturity=1.0)
     config = CalibrationConfig(use_parallel=False, verbose=0)
 
     assert config.esscher_solver_config is None
+    assert config.martingale_measure is None
 
     cal = Calibrator(model=BilateralGamma(delta=DELTA), data=data, config=config)
-    # EsscherSolver falls back to a default EsscherSolverConfig() when given None.
-    assert isinstance(cal.esscher_solver.config, EsscherSolverConfig)
+    assert isinstance(cal.martingale_measure, EsscherMeasure)
+    # config=None signals "use EsscherSolver's default" inside solve();
+    # the wrapper itself does not materialise a default config.
+    assert cal.martingale_measure.config is None

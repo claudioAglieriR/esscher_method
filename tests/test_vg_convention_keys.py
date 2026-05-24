@@ -1,5 +1,5 @@
 """
-Unit tests for VarianceGamma.parameters_convention_update (P3.T6).
+Unit tests for VarianceGamma.parameters_convention_update.
 
 The conventional VG triple (sigma, theta, nu) is a reporting-only view of the
 internal (alpha, lambda_P, lambda_M) calibrated parameters. These tests pin

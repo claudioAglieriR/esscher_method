@@ -1,5 +1,5 @@
 """
-Seed-invariance test for the equity-cumulants bootstrap (P4.T2).
+Seed-invariance test for the equity-cumulants bootstrap.
 
 historical_values_init() bootstraps the calibration loop with a seed
 obtained by fitting physical parameters on equity log-returns. The

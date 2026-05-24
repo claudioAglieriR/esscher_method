@@ -1,5 +1,5 @@
 """
-Thread-safety invariant test for AssetInferenceEngine._infer_threaded (P4.T1).
+Thread-safety invariant test for AssetInferenceEngine._infer_threaded.
 
 The threaded inference path shares self.model across worker threads. The
 contract (pinned by the comment-invariant in asset_inference.py and by these

@@ -93,7 +93,7 @@ sampling, while sigma is identified almost exactly by the sample variance.
   identification problem at finite N*. The test still detects sign flips,
   order-of-magnitude misses, and bounds violations; quantitative
   reliability would require either much larger N or the bootstrap-based
-  empirical confidence intervals planned in P3.T2.
+  empirical confidence intervals planned in future improvements.
 
 - **VG parameters** use **relative tolerance of 60 percent**. VG with
   three parameters identified by three cumulants is structurally better

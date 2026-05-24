@@ -1,5 +1,5 @@
 """
-Test utilities for the nightly recovery-study suite (P3.T4).
+Test utilities for the nightly recovery-study suite.
 
 This module collects the heavier helper code so that the test file
 itself can stay focused on the test logic. Nothing in this module is

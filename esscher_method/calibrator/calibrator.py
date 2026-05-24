@@ -10,7 +10,7 @@ import numpy as np
 
 from esscher_method.model.model import Model
 from .data_calibration import CalibrationConfig, CalibrationData
-from .esscher_solver import EsscherSolver
+from .martingale_measure import EsscherMeasure, MartingaleMeasure
 from .moment_matching import MomentMatcher
 from .optimization import ParameterOptimizer
 from .pricer import LewisEuropeanTargetPricer, LewisPricerConfig
@@ -86,12 +86,14 @@ class Calibrator:
 
         self.moment_matcher = MomentMatcher(model=self.model, config=self.config)
         self.optimizer = ParameterOptimizer(model=self.model, config=self.config, matcher=self.moment_matcher)
-        self.esscher_solver = EsscherSolver(
-            model=self.model,
-            risk_free_rate=float(self.data.risk_free_rate),
-            delta=float(self.model.delta),
-            config=self.config.esscher_solver_config,
-        )
+        # Resolve the EMM strategy. Backward compat: if martingale_measure is
+        # not specified, build the default EsscherMeasure parameterised by the
+        # legacy esscher_solver_config field. When martingale_measure is set
+        # explicitly, esscher_solver_config is ignored.
+        configured_measure = self.config.martingale_measure
+        if configured_measure is None:
+            configured_measure = EsscherMeasure(config=self.config.esscher_solver_config)
+        self.martingale_measure: MartingaleMeasure = configured_measure
         self.asset_inference = AssetInferenceEngine(model=self.model, data=self.data, config=self.config, logger=self.logger)
 
         self.sample_cumulants: Dict[str, float] = {}
@@ -267,21 +269,43 @@ class Calibrator:
 
     def risk_neutral_update(self) -> None:
         """
-        Solve for p_star and update model risk-neutral parameters with bounds validation.
+        Solve the EMM parameter via the configured martingale measure and
+        update model risk-neutral parameters with bounds validation.
         """
         try:
-            p_star = float(self.esscher_solver.solve(p_initial=float(self.p_star)))
+            emm_param = float(
+                self.martingale_measure.solve(
+                    model=self.model,
+                    risk_free_rate=float(self.data.risk_free_rate),
+                    delta=float(self.model.delta),
+                    p_initial=float(self.p_star),
+                )
+            )
+        except NotImplementedError:
+            # Surface clearly to the caller (e.g. MeanCorrectingMeasure on BG / VG).
+            raise
         except Exception as exc:
-            raise ValueError(f"Esscher p_star solver failed: {exc}") from exc
+            raise ValueError(f"Martingale-measure parameter solve failed: {exc}") from exc
 
-        updated_rn_params = self.model.risk_neutral_parameters_update(p_star=float(p_star))
+        # apply() may raise NotImplementedError (e.g. MeanCorrectingMeasure on
+        # BG / VG); let it propagate so the user sees the model-specific message.
+        updated_rn_params = self.martingale_measure.apply(
+            model=self.model, emm_param=float(emm_param)
+        )
         self.model.risk_neutral_parameters = dict(updated_rn_params)
         self.risk_neutral_history.append(dict(updated_rn_params))
-        self.p_star = float(p_star)
+        # p_star is Esscher-specific; mirror it from emm_param only when the
+        # measure is Esscher, NaN otherwise to flag misuse by downstream code
+        # that assumes the legacy Esscher path.
+        self.p_star = (
+            float(emm_param)
+            if isinstance(self.martingale_measure, EsscherMeasure)
+            else float("nan")
+        )
 
         self.model.check_bounds()
         self._check_model_pricer_consistency()
-        self._log(f"STEP 2 - p_star (bounded solver) = {self.p_star}\n", min_verbose=1)
+        self._log(f"STEP 2 - EMM param (solver) = {emm_param}\n", min_verbose=1)
 
     def asset_log_returns_computation(self) -> np.ndarray:
         """

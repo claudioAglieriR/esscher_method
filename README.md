@@ -153,9 +153,16 @@ The test suite is organised in three layers, identified by pytest markers:
 
 | Layer | Marker | Default `pytest` | Command | Typical runtime |
 |---|---|---|---|---|
-| Unit + smoke + regression baselines | _(none)_ | runs | `pytest` | ~8 minutes |
-| Extended smoke (e.g. PD-bootstrap coverage on Merton) | `slow` | skipped | `pytest -m slow` | ~5 minutes |
+| Unit + smoke + regression baselines | _(none)_ | runs | `pytest` | ~9 minutes |
+| Extended smoke (e.g. PD-bootstrap coverage on Merton) | `slow` | skipped | `pytest -m slow` | ~8 minutes |
 | Comprehensive statistical validation | `nightly` | skipped | `pytest -m nightly` | hours |
+
+Runtimes above are measured on a 4-core laptop CPU around 3 GHz (Intel
+Core i5-11300H, Windows 11 64-bit). The default suite pins BLAS/MKL to
+a single thread for determinism (see `tests/conftest.py`), so wall time
+scales with single-thread CPU performance rather than core count; a
+faster single-core may finish noticeably below 9 minutes and a slower
+one noticeably above.
 
 The first layer is the standard CI check; it pins numerical regression
 baselines (PD% and fitted parameters per ticker x model) at

@@ -119,6 +119,28 @@ inversion converges in 1-2 brentq iterations per day because the residual
 is monotone and the bracket is well-conditioned, whereas typical
 intermediate-moneyness inversions may need 4-6 iterations.
 """
+# TODO(nightly recovery): Companion nightly test pending.
+# Spec for the deferred counterpart:
+#   - N = 5000 daily log-returns (vs N=500 here): asymptotic regime;
+#     tolerances tighten as 1/sqrt(N) and the BG identification stops
+#     needing the 100-percent rtol envelope used by this smoke layer.
+#   - V_E / K ~ 2 built by forward Lewis pricing under the RN measure
+#     (vs V_E/K=100 deep-ITM shortcut here): exercises the full Lewis
+#     inversion path during calibration, not only the moment-matching
+#     identification step.
+#   - Per-parameter tolerance derived from Fisher information via the
+#     delta method: Cov(theta_hat) = J^-1 Sigma J^-T, where J is the
+#     cumulant-to-parameter Jacobian and Sigma the sample-cumulant
+#     covariance under theta_true.
+#   - Helpers already in tests/_recovery_helpers.py (simulate_log_returns,
+#     fresh_model_with_theta, sample_cumulants_matching_keys,
+#     cumulant_jacobian_at_theta, sigma_cumulant_montecarlo,
+#     fisher_tolerance, build_equity_from_asset).
+#   - Optional opt-in extension: same matrix re-run with
+#     MeanCorrectingMeasure (currently Merton-only prototype) to verify
+#     the alternative EMM does not degrade recovery on the Gaussian case.
+#   - Marker: @pytest.mark.nightly; expected ~5-10 h on the reference
+#     machine, opt-in via `pytest -m nightly`.
 from __future__ import annotations
 
 from typing import Dict, Tuple

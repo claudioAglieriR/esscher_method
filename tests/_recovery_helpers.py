@@ -92,6 +92,14 @@ expansion, (b) Lewis inversion noise, or (c) a real identification
 problem (e.g., BG cumulant-equivalent local minima). Do NOT relax z
 without one of these explanations.
 """
+# TODO(nightly recovery, F6.T1): This module is prepared for the nightly
+# recovery test but is not yet consumed by any pytest-collected file.
+# The companion test (N=5000, V_E/K~2, forward Lewis pricing, per-parameter
+# Fisher tolerances via fisher_tolerance() below) is planned in the
+# nightly layer; until that test ships, this module is dead from pytest's
+# point of view, kept here so the heavy helper definitions need not be
+# re-derived later. See the TODO block at the top
+# of tests/test_recovery_study.py for the full nightly spec.
 from __future__ import annotations
 
 from typing import Dict, Optional, Tuple, Type

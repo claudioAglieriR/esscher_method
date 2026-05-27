@@ -48,6 +48,27 @@ acceptable for a CI suite; tuning n_replicas down further would weaken
 the bootstrap CI estimate, and tuning M down would make the empirical
 coverage statistic too noisy to be meaningful.
 """
+# TODO(nightly bootstrap coverage): Companion nightly test pending.
+# Spec for the deferred counterpart:
+#   - M = 100 outer Monte-Carlo draws (vs M=10 here in the slow layer):
+#     reduces the empirical-coverage estimator standard error from
+#     ~15 to ~5 percentage points, enough resolution to distinguish a
+#     well-calibrated bootstrap from a 5-percent miscalibration.
+#   - n_replicas = 200 inner bootstrap replicas (vs 15 here): the
+#     percentile CI converges to its asymptotic shape; the residual
+#     undercoverage is then methodological (skewness of the PD
+#     distribution under sampling), not estimation noise of the CI itself.
+#   - Coverage threshold = 85 percent (vs the smoke's 70 percent): tight
+#     enough to detect a true miscalibration, loose enough to absorb the
+#     known undercoverage of percentile bootstrap on skewed estimands.
+#   - All three Levy models (vs Merton only here): Merton uses the
+#     closed-form normal-CDF ground truth already defined here; BG and VG
+#     require Gil-Pelaez standalone integration as the ground truth
+#     (closed-form unavailable). The standalone Gil-Pelaez ground truth
+#     must live in a new tests/_bootstrap_helpers.py (to be created) to
+#     avoid circular dependence on the calibrator under test.
+#   - Marker: @pytest.mark.nightly; expected ~5-7 h on the reference
+#     machine, opt-in via `pytest -m nightly`.
 from __future__ import annotations
 
 import warnings
